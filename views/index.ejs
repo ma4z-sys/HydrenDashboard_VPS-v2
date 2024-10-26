@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create VPS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #000000;
+            background-image: radial-gradient(circle at 50% 50%, #111111 0%, #000000 100%);
+            font-family: 'Inter', sans-serif;
+            position: relative; /* Required for absolute positioning of the button */
+        }
+
+        .create-vps-button {
+            position: absolute; /* Absolute positioning */
+            bottom: 20px; /* Distance from the bottom */
+            right: 20px; /* Distance from the right */
+            z-index: 10; /* Ensure it's on top of other elements */
+        }
+
+        .modal {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        .modal.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .status {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .vps-card:hover .status {
+            opacity: 1;
+        }
+
+        .status-online {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #22c55e;
+        }
+
+        .toast {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            font-size: 12px;
+            opacity: 0;
+            transform: translateY(-4px);
+            transition: all 0.2s ease;
+        }
+
+        :hover .status-badge {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center text-white">
+    <div class="w-full max-w-md p-8 card-border">
+
+        <% if (message) { %>
+            <div class="toast show mb-4">
+                <%= message %>
+            </div>
+        <% } %>
+        
+
+        <!-- Create VPS Button positioned at the bottom right corner -->
+        <div class="create-vps-button">
+            <button id="openModalButton" class="bg-white text-black py-2 px-4 rounded-md font-medium hover:bg-gray-300 transition-all">
+                Create Server
+            </button>
+        </div>
+
+        <!-- Modal -->
+        <div id="myModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-black rounded-lg p-6 w-full max-w-md modal">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Create VPS Server</h2>
+                    <button id="closeModalButton" class="text-white">&times;</button>
+                </div>
+
+                <form action="/create-server" method="GET" class="space-y-4">
+                    <div>
+                        <label for="ram" class="block mb-1 font-medium">RAM (in GB)</label>
+                        <input 
+                            type="text" 
+                            name="ram" 
+                            id="ram" 
+                            required 
+                            class="w-full custom-input text-black px-4 py-2 rounded-md" 
+                            min="1" 
+                            max="64"
+                            placeholder="1-64 GB">
+                    </div>
+                    <div>
+                        <label for="cores" class="block mb-1 font-medium">Cores</label>
+                        <input 
+                            type="number" 
+                            name="cores" 
+                            id="cores" 
+                            required 
+                            class="w-full text-black custom-input px-4 py-2 rounded-md" 
+                            min="1" 
+                            max="16"
+                            placeholder="1-16 Cores">
+                    </div>
+                    <button type="submit" class="w-full bg-white text-black py-2 rounded-md font-medium hover:bg-gray-300 transition-all mb-4">
+                        Create Server
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-center mb-10">Active VPS Instances</h2>
+        
+        <% if (vpsList.length === 0) { %>
+            <div class="card-border">
+                <div class="card-content p-8 text-center">
+                    <div class="mb-4">
+                        <svg class="w-16 h-16 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-xl text-gray-400">No VPS yet</p>
+                    <p class="mt-2 text-gray-500">Create your first VPS to get started!</p>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="grid grid-cols-1 gap-6">
+                <% vpsList.forEach(vps => { %>
+                    <div class="vps-card">
+                        <div class="card-content p-6">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="flex h-2 w-2">
+                                            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                          </span>
+                                        <h3 class="text-xl font-semibold"><%= vps.container_id.substring(0, 11) %></h3>
+                                    </div>
+                                    <div class="mt-2 text-sm">
+                                        <p class="text-gray-400">
+                                            RAM: <span class="text-white font-semibold"><%= vps.ram %></span>
+                                        </p>
+                                        <p class="text-gray-400">
+                                            Cores: <span class="text-white font-semibold"><%= vps.cores %></span>
+                                        </p>
+                                        <p class="text-gray-400">
+                                            SSH Command: <span class="text-white font-semibold"><code><%= vps.ssh_command.replace("ssh session: ", "") %></code></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <% if (vps.status === 'online') { %>
+                                    <div class="status-badge">Online</div>
+                                <% } else { %>
+                                    <p class="text-red-500">Offline</p>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script>
+    // Function to open the modal with animation
+    const openModal = () => {
+        const modal = document.getElementById('myModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.modal').classList.add('active');
+        }, 10); // Delay to ensure transition applies
+    };
+
+    // Function to close the modal with animation
+    const closeModal = () => {
+        const modal = document.getElementById('myModal');
+        modal.querySelector('.modal').classList.remove('active');
+        modal.addEventListener('transitionend', () => {
+            modal.classList.add('hidden');
+        }, { once: true }); // Remove hidden class after transition
+    };
+
+    // Event listener for the button to open the modal
+    document.getElementById('openModalButton').addEventListener('click', openModal);
+
+    // Event listener for the button to close the modal
+    document.getElementById('closeModalButton').addEventListener('click', closeModal);
+</script>
+</body>
+</html>
