@@ -1,7 +1,8 @@
 {
     "api": {
         "url": "http://138.68.79.95:60094",
-        "key": "your_secret_verify_key"
+        "key": "your_secret_verify_key",
+        "port": "3000"
       }
   }
   
